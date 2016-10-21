@@ -5,28 +5,31 @@ library(magrittr)
 boschdb <- src_sqlite("basedb.sqlite3", create = T)
 
 basedata <- data.frame()
+tablename <- "categoryinfo"
 
-dataColNames <- readr::read_csv("rawdata/train_categorical.csv", n_max = 1, col_names = F) %>%
+dataFile <- "rawdata/train_categorical.csv"
+
+dataColNames <- readr::read_csv(dataFile, n_max = 1, col_names = F) %>%
   sapply("[[", 1) %>%
   as.vector()
 
-cacheData <- readr::read_csv("rawdata/train_categorical.csv", n_max = 3, 
+columnTypes <- paste("i", paste(rep(x = "c", length(dataColNames) - 1), collapse = ""), sep = "")
+
+cacheData <- readr::read_csv(dataFile, n_max = 3, col_types = columnTypes,
                              skip = 1, col_names = F)
 colnames(cacheData) <- dataColNames
 
-meltedCache <- melt(cacheData, id.vars = 1, na.rm = T, factorsAsStrings = F)
-
-meltedCache %<>%
+meltedCache <- melt(cacheData, id.vars = 1, na.rm = T, factorsAsStrings = F) %>%
   tidyr::separate(col = "variable", into = c("line", "station", "feature"), sep = "_") %>%
   dplyr::mutate(line    = as.integer(gsub(pattern = "L", replacement = "", line)),
                 station = as.integer(gsub(pattern = "S", replacement = "", station)),
                 feature = as.integer(gsub(pattern = "F", replacement = "", feature)))
 
-copy_to(boschdb, meltedCache, name = "categorical", temporary = F)
-db_create_index(boschdb$con, "categorical",  c("line", "station", "feature"))
+copy_to(boschdb, meltedCache, name = tablename, temporary = F)
+db_create_index(boschdb$con, tablename,  c("line", "station", "feature"))
 
 step <- 100000
-for(i in 0:2000) {
+for(i in 0:12) {
   cacheData <- readr::read_csv("rawdata/train_categorical.csv", n_max = step, 
                    skip = i*step + 4, col_names = F)
     #data.table::fread("rawdata/train_categorical.csv", 

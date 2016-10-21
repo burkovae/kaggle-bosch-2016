@@ -13,18 +13,17 @@ dataColNames <- readr::read_csv(dataFile, n_max = 1, col_names = F) %>%
   sapply("[[", 1) %>%
   as.vector()
 
-cacheData <- readr::read_csv(dataFile, n_max = 3, 
+columnTypes <- paste("i", paste(rep(x = "d", length(dataColNames) - 1), collapse = ""), sep = "")
+
+cacheData <- readr::read_csv(dataFile, n_max = 3, col_types = columnTypes,
                              skip = 1, col_names = F)
 colnames(cacheData) <- dataColNames
 
-meltedCache <- melt(cacheData, id.vars = 1, na.rm = T, factorsAsStrings = F)
-
-meltedCache %<>%
+meltedCache <- melt(cacheData, id.vars = 1, na.rm = T, factorsAsStrings = F) %>%
   tidyr::separate(col = "variable", into = c("line", "station", "dateidx"), sep = "_") %>%
   dplyr::mutate(line    = as.integer(gsub(pattern = "L", replacement = "", line)),
                 station = as.integer(gsub(pattern = "S", replacement = "", station)),
-                dateidx = as.integer(gsub(pattern = "D", replacement = "", dateidx)),
-                value   = as.double(value))
+                dateidx = as.integer(gsub(pattern = "D", replacement = "", dateidx)))
 
 copy_to(boschdb, meltedCache, name = tablename, temporary = F)
 db_create_index(boschdb$con, tablename,  c("line", "station"))
