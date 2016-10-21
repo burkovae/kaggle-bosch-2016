@@ -31,7 +31,7 @@ db_create_index(boschdb$con, tablename,  c("line", "station", "feature"))
 
 step <- 100000
 for(i in 0:1500) {
-  cacheData <- readr::read_csv(dataFile, n_max = step, 
+  cacheData <- readr::read_csv(dataFile, n_max = step, col_types = columnTypes, 
                                skip = i*step + 4, col_names = F)
   #data.table::fread(dataFile, 
   #                  skip = i*step + 4, nrows = step, 
