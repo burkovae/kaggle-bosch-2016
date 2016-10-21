@@ -16,13 +16,12 @@ dataColNames <- readr::read_csv(dataFile, n_max = 1, col_names = F) %>%
 cacheData <- readr::read_csv(dataFile, n_max = 3, skip = 1, col_names = F)
 colnames(cacheData) <- dataColNames
 
-meltedCache <- melt(dplyr::select(cacheData, - Response), id.vars = c("Id"), na.rm = T, factorsAsStrings = F)
-
-meltedCache %<>%
+meltedCache <- melt(dplyr::select(cacheData, - Response), id.vars = c("Id"), na.rm = T, factorsAsStrings = F) %>%
   tidyr::separate(col = "variable", into = c("line", "station", "feature"), sep = "_") %>%
   dplyr::mutate(line    = as.integer(gsub(pattern = "L", replacement = "", line)),
                 station = as.integer(gsub(pattern = "S", replacement = "", station)),
-                feature = as.integer(gsub(pattern = "F", replacement = "", feature)))
+                feature = as.integer(gsub(pattern = "F", replacement = "", feature)),
+                value   = as.double(value))
 
 copy_to(boschdb, meltedCache, name = tablename, temporary = F)
 copy_to(boschdb, dplyr::select(cacheData, Id, Response), name = "responseinfo", temporary = F)
