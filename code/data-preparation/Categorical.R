@@ -30,7 +30,7 @@ db_create_index(boschdb$con, tablename,  c("line", "station", "feature"))
 
 step <- 100000
 for(i in 0:12) {
-  cacheData <- readr::read_csv("rawdata/train_categorical.csv", n_max = step, 
+  cacheData <- readr::read_csv(dataFile, n_max = step, 
                    skip = i*step + 4, col_names = F)
     #data.table::fread("rawdata/train_categorical.csv", 
     #                  skip = i*step + 4, nrows = step, 
@@ -44,7 +44,7 @@ for(i in 0:12) {
                   station = as.integer(gsub(pattern = "S", replacement = "", station)),
                   feature = as.integer(gsub(pattern = "F", replacement = "", feature)))
   
-  db_insert_into(boschdb$con, "categorical", meltedCache)
+  db_insert_into(boschdb$con, tablename, meltedCache)
   print(i)
 }
 
