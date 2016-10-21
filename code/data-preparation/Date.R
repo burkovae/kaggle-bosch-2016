@@ -20,13 +20,14 @@ colnames(cacheData) <- dataColNames
 meltedCache <- melt(cacheData, id.vars = 1, na.rm = T, factorsAsStrings = F)
 
 meltedCache %<>%
-  tidyr::separate(col = "variable", into = c("line", "station", "feature"), sep = "_") %>%
+  tidyr::separate(col = "variable", into = c("line", "station", "dateidx"), sep = "_") %>%
   dplyr::mutate(line    = as.integer(gsub(pattern = "L", replacement = "", line)),
                 station = as.integer(gsub(pattern = "S", replacement = "", station)),
-                feature = as.integer(gsub(pattern = "F", replacement = "", feature)))
+                dateidx = as.integer(gsub(pattern = "D", replacement = "", dateidx)),
+                value   = as.double(value))
 
 copy_to(boschdb, meltedCache, name = tablename, temporary = F)
-db_create_index(boschdb$con, tablename,  c("line", "station", "feature"))
+db_create_index(boschdb$con, tablename,  c("line", "station"))
 
 step <- 100000
 for(i in 0:1500) {
