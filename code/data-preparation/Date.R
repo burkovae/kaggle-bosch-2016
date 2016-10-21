@@ -5,12 +5,15 @@ library(magrittr)
 boschdb <- src_sqlite("basedb.sqlite3", create = T)
 
 basedata <- data.frame()
+tablename <- "dateinfo"
 
-dataColNames <- readr::read_csv("rawdata/train_categorical.csv", n_max = 1, col_names = F) %>%
+dataFile <- "rawdata/train_date.csv"
+
+dataColNames <- readr::read_csv(dataFile, n_max = 1, col_names = F) %>%
   sapply("[[", 1) %>%
   as.vector()
 
-cacheData <- readr::read_csv("rawdata/train_categorical.csv", n_max = 3, 
+cacheData <- readr::read_csv(dataFile, n_max = 3, 
                              skip = 1, col_names = F)
 colnames(cacheData) <- dataColNames
 
@@ -22,17 +25,17 @@ meltedCache %<>%
                 station = as.integer(gsub(pattern = "S", replacement = "", station)),
                 feature = as.integer(gsub(pattern = "F", replacement = "", feature)))
 
-copy_to(boschdb, meltedCache, name = "categorical", temporary = F)
-db_create_index(boschdb$con, "categorical",  c("line", "station", "feature"))
+copy_to(boschdb, meltedCache, name = tablename, temporary = F)
+db_create_index(boschdb$con, tablename,  c("line", "station", "feature"))
 
-step <- 1000
-for(i in 1000:1500) {
-  cacheData <- #readr::read_csv("rawdata/train_categorical.csv", n_max = step, 
-    #               skip = i*step + 4, col_names = F)
-    data.table::fread("rawdata/train_categorical.csv", 
-                      skip = (i-1)*step + 4, nrows = step, 
-                      stringsAsFactors = F, 
-                      na.strings = c("NA","N/A",""))
+step <- 100000
+for(i in 0:1500) {
+  cacheData <- readr::read_csv(dataFile, n_max = step, 
+                   skip = i*step + 4, col_names = F)
+    #data.table::fread(dataFile, 
+    #                  skip = i*step + 4, nrows = step, 
+    #                  stringsAsFactors = F, 
+    #                  na.strings = c("NA","N/A",""))
   colnames(cacheData) <- dataColNames
   
   meltedCache <- melt(cacheData, id.vars = 1, na.rm = T, factorsAsStrings = F) %>%
@@ -41,7 +44,7 @@ for(i in 1000:1500) {
                   station = as.integer(gsub(pattern = "S", replacement = "", station)),
                   feature = as.integer(gsub(pattern = "F", replacement = "", feature)))
   
-  db_insert_into(boschdb$con, "categorical", meltedCache)
+  db_insert_into(boschdb$con, tablename, meltedCache)
   print(i)
 }
 
