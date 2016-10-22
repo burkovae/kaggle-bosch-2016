@@ -1,8 +1,20 @@
+library(reshape2)
+library(magrittr)
+library(tidyverse)
+
+
+boschdb <- src_sqlite("F:/basedb.sqlite3", create = T)
+
+
 
 categoricalData <- tbl(boschdb, "categorical")
 
 categoricalData %>%
   summarise(rows = n())
+
+categoricalData %>%
+  dplyr::group_by(line, station) %>%
+  dplyr::summarise(nitems = (count(distinct(select(Id < 500000)))))
 
 dataSummary <- categoricalData %>%
   dplyr::group_by(line, station) %>%
